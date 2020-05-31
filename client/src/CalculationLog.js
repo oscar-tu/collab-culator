@@ -9,6 +9,10 @@ export default class CalculationLog extends React.Component {
 		}
 	}
 
+	// All we need to render here are the calculation logs.
+	// We iterate through the log props that is passed from
+	// the Calculator component and dynamically create and
+	// display the contents in most recent order.
 	render() {
 		return (
 			<div className='container'>

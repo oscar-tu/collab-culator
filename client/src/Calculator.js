@@ -8,7 +8,13 @@ export default class ResultArea extends React.Component {
 	
 	constructor(props) {
 		super(props);
-		this.operations = ['÷','/', 'x', '-', '+', '='];
+
+		// List of acceptable operations
+		this.operations = ['÷', 'x', '-', '+', '='];
+
+		// Our state will consist of the display value,
+		// 1st/2nd operand value/status, current operator,
+		// current # of users in the room, and history (log).
 		this.state = {
 			displayValue: '0',
 			firstOperand: null,
@@ -19,10 +25,11 @@ export default class ResultArea extends React.Component {
 		}
 	}
 
-
+	// When component mounts, send a new connection message
+	// and setup component to receive messages from server
 	componentDidMount() {
 		client.onopen = () => {
-			console.log('WebSocket Client Connected');
+			// console.log('WebSocket Client Connected');
 			client.send(JSON.stringify({data: "new connect", type: 'userEvent'}));
 		};
 
@@ -37,14 +44,9 @@ export default class ResultArea extends React.Component {
 				this.setState(data);
 			}
 		};
-
-		document.addEventListener('keydown', this.handleKeyPress);
 	}
 
-	componentWillUnmount() {
-		document.removeEventListener('keydown', this.handleKeyPress);
-	}
-
+	// Return the arithmetic value of our parameters
 	evaluate(op, a, b) {
 		switch(op) {
 			case '÷':
@@ -62,31 +64,47 @@ export default class ResultArea extends React.Component {
 		}
 	}
 
+	// Operator handler. We update our display value everytime 
+	// an operator is pressed, and based on various state values
+	// we may perform an evaluation to get an answer.
 	handleOperator(op) {
 		let msg = '';
 		let input = parseFloat(this.state.displayValue);
 
+		// If we have already selected an operator and press another operator
 		if (this.state.operator && this.state.waitingForSecondOperand) {
 			return {
 				operator: op,
 			};
 		}
 
+		// First operand, if not set already, is now whatever is currently
+		// on the screen/displayValue. 
 		if (this.state.firstOperand === null) {
 			msg = {
 				firstOperand: input,
 			};
+
+		// Otherwise if we press an operator and already have firstOperand 
+		// *and* a display value
 		} else if (this.state.operator) {
-			let currentValue = this.state.firstOperand || 0;
-			let res = this.evaluate(this.state.operator, currentValue, input);
+			let previousDisplayValue = this.state.firstOperand || 0;
+
+			// Get current result of the "previous" operator (most recent one
+			// we pressed before this current operator) evaluated between
+			// the previousDisplayValue and input (current displayValue);
+			let res = this.evaluate(this.state.operator, previousDisplayValue, input);
 			
+			// Update message to be sent to server and re-emitted to all clients
 			msg = {
 				displayValue: res,
 				firstOperand: res,
 			};
 
+			// If any evaluation was made and the last one wasn't an equals
+			// sign, then we update our calculation log. 
 			if (this.state.operator !== '=') {
-				let item = currentValue + ' ' + this.state.operator + ' ' + input + ' = ' + res;
+				let item = previousDisplayValue + ' ' + this.state.operator + ' ' + input + ' = ' + res;
 				if (this.state.history.length < 10) {
 					msg['history'] = [...this.state.history, item];	
 				} else {
@@ -95,12 +113,15 @@ export default class ResultArea extends React.Component {
 			}
 		}
 
+		// Now displayValue is updated and we have a firstOperand,
+		// set the state values to new updated operator et al.
 		msg['waitingForSecondOperand'] = true;
 		msg['operator'] = op;
 
 		return msg;
 	}
 
+	// Insert decimal into displayValue
 	handleDecimal() {
 		let msg = ''
 		if (this.state.waitingForSecondOperand) return msg;
@@ -113,6 +134,7 @@ export default class ResultArea extends React.Component {
 		return msg;
 	}
 
+	// Reset state
 	handleClear() {
 		return {
 			displayValue: '0',
@@ -122,12 +144,16 @@ export default class ResultArea extends React.Component {
 		};
 	}
 
+	// Swap +/- sign
 	handlePosNeg() {
 		return {
 			displayValue: this.state.displayValue === '0' ? '0' : (-1 * parseFloat(this.state.displayValue)),
 		};
 	}
 
+	// Handle digits. If we press a digit and we are still waiting
+	// for a second operand, then update displayvalue and set it 
+	// to false. Otherwise just add on the digit as a 2/3/4...digit number
 	handleDigit(value) {
 		let msg = '';
 		if (this.state.waitingForSecondOperand) {
@@ -143,10 +169,12 @@ export default class ResultArea extends React.Component {
 		return msg;
 	}
 
+	// Clear history log by sending a blank log back to server to be emitted
 	clearHistoryLog() {
 		client.send(JSON.stringify({data: {history: []}, type: 'clickEvent'}));
 	}
 
+	// Button onClick event handler
 	handleClickEvent(value) {
 		let message = '';
 		if (this.operations.includes(value)) {
@@ -160,6 +188,8 @@ export default class ResultArea extends React.Component {
 		} else {
 			message = this.handleDigit(value);
 		}
+
+		// Send the state to be updated as a message
 		client.send(JSON.stringify({data: message, type: 'clickEvent'}));
 	}
 
