@@ -1,4 +1,4 @@
-# multiplayer-calculator
+# collab-culator
 React Calculator app with Websockets and a shared log
 
 # Instructions
