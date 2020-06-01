@@ -1,5 +1,6 @@
 # collab-culator
 React Calculator app with Websockets and a shared log
+Heroku app is available at https://collab-culator.herokuapp.com
 
 # Instructions
 First download any node modules that may be needed from package.json
