@@ -68,7 +68,7 @@ export default class ResultArea extends React.Component {
 	// an operator is pressed, and based on various state values
 	// we may perform an evaluation to get an answer.
 	handleOperator(op) {
-		let msg = '';
+		let msg = {};
 		let input = parseFloat(this.state.displayValue);
 
 		// If we have already selected an operator and press another operator
@@ -123,7 +123,7 @@ export default class ResultArea extends React.Component {
 
 	// Insert decimal into displayValue
 	handleDecimal() {
-		let msg = ''
+		let msg = {};
 		if (this.state.waitingForSecondOperand) return msg;
 
 		if (!this.state.displayValue.includes('.')) {
